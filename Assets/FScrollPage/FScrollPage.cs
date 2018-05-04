@@ -30,9 +30,22 @@ namespace FScrollPage {
     public class FScrollPage : MonoBehaviour, IPointerDownHandler, IPointerUpHandler , IPointerExitHandler
     {
 
+        /// <summary>
+        /// 缓动函数
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="b"></param>
+        /// <param name="c"></param>
+        /// <param name="d"></param>
+        /// <returns></returns>
+        static float BackEaseOut(float t, float b = 0, float c = 1, float d = 1)
+        {
+            return c * ((t = t / d - 1) * t * ((1.70158f + 1) * t + 1.70158f) + 1) + b;
+        }
+
+
         [Header("自动初始化")]
         public bool IsAutoInit = true;
-
         [Header("滑动父对象")]
         public RectTransform Content;
         [Header("滑块边距")]
@@ -56,14 +69,10 @@ namespace FScrollPage {
 
         private int NowItemID;
 
-        private void Start()
-        {
-            if(IsAutoInit)
-                Init();
-        }
+        //------------------------------------------------------------------------------------------外部可用接口
 
         /// <summary>
-        /// 初始化
+        /// 初始化item
         /// </summary>
         /// <param name="defaultID">默认选中id</param>
         /// <param name="scrollList">自定义[id,item]</param>
@@ -119,7 +128,6 @@ namespace FScrollPage {
             
         }
 
-
         public void Init(int defultID = 0) { 
             ScollList = new List<FScollObject>();
             Content.pivot = Content.anchorMax = Content.anchorMin = new Vector2(0.5f, 0.5f);
@@ -157,6 +165,26 @@ namespace FScrollPage {
             }
         }
 
+        /// <summary>
+        /// 滑动到指定id的item
+        /// </summary>
+        /// <param name="itemCount"></param>
+        public void MoveToItemID(int itemCount)
+        {
+            StopCoroutine("moveToItem");
+            StartCoroutine(moveToItem(itemCount));
+        }
+
+
+
+        //-----------------------------------------------------------------------------------------滑动功能逻辑体
+
+        private void Start()
+        {
+            if (IsAutoInit)
+                Init();
+        }
+
         private void Update()
         {
             if (isScroll)
@@ -180,6 +208,9 @@ namespace FScrollPage {
             }
         }
 
+        /// <summary>
+        /// 鼠标操作监听
+        /// </summary>
         void MouseMove() {
             if (mouseVector == Vector2.zero)
             {
@@ -192,6 +223,10 @@ namespace FScrollPage {
             }
         }
 
+        /// <summary>
+        /// 向指定方向滑动
+        /// </summary>
+        /// <param name="Delta"></param>
         void MoveScrollItem(Vector2 Delta) {
             if (Delta == Vector2.zero) {
                 return;
@@ -210,7 +245,10 @@ namespace FScrollPage {
                 sizeUpdata(item);
             });
         }
-
+        /// <summary>
+        /// 移动到指定位置
+        /// </summary>
+        /// <param name="Delta"></param>
         void PostionScrollItem(Vector2 Delta)
         {
             ScollList.ForEach(item => {
@@ -219,7 +257,10 @@ namespace FScrollPage {
             });
         }
 
-        void UpdataLastPostion() {
+        /// <summary>
+        /// 重置位置信息
+        /// </summary>
+        void UpdataPostion() {
             for (int i = 0; i < ScollList.Count; i++)
             {
                 ScollList[i].lastpostion = ScollList[i].rectTransform.anchoredPosition;
@@ -227,6 +268,10 @@ namespace FScrollPage {
             }
         }
 
+        /// <summary>
+        /// 滑动结束后的回退效果
+        /// </summary>
+        /// <returns></returns>
         IEnumerator moveBack() {
             float timenow = 0;
             while (Vector2.Distance(moveVector , Vector2.zero) >= 0.5f && timenow < 0.35f) {
@@ -247,16 +292,16 @@ namespace FScrollPage {
                     countID = item.countID;
                 }
             });
-            UpdataLastPostion();
+            UpdataPostion();
             MoveToItemID(countID);
 
         }
 
-        public void MoveToItemID(int itemCount) {
-            StopCoroutine("moveToItem");
-            StartCoroutine(moveToItem(itemCount));
-        }
-
+        /// <summary>
+        /// 滑动到指定item协程
+        /// </summary>
+        /// <param name="itemID"></param>
+        /// <returns></returns>
         IEnumerator moveToItem(int itemID) {
             int count = 0;
             int minCount = 0;
@@ -321,18 +366,6 @@ namespace FScrollPage {
             return BackEaseOut(timeScale);
         }
 
-        /// <summary>
-        /// 缓动函数
-        /// </summary>
-        /// <param name="t"></param>
-        /// <param name="b"></param>
-        /// <param name="c"></param>
-        /// <param name="d"></param>
-        /// <returns></returns>
-        static float BackEaseOut(float t, float b = 0, float c = 1, float d = 1)
-        {
-            return c * ((t = t / d - 1) * t * ((1.70158f + 1) * t + 1.70158f) + 1) + b;
-        }
 
         /// <summary>
         /// 控制item在不同位置的大小
@@ -356,22 +389,25 @@ namespace FScrollPage {
             fobject.rectTransform.localScale = Vector2.one * (PicthScale * (1 - sizeOffset) + 1);
         }
 
+        /// <summary>
+        /// 开始滑动时触发
+        /// </summary>
         void OnScrollUp() {
             isScroll = false;
             mouseVector = Vector2.zero;
             StartCoroutine(moveBack());
         }
 
+        /// <summary>
+        /// 退出滑动时触发
+        /// </summary>
         void OnScrollDown() {
             isScroll = true;
             StopAllCoroutines();
             moveVector = Vector2.zero;
         }
 
-        public void OnPointerClick(PointerEventData eventData)
-        {
-           
-        }
+        //-------------------------------------------------------------------------------------接口实现
 
         public void OnPointerDown(PointerEventData eventData)
         {
@@ -395,9 +431,5 @@ namespace FScrollPage {
             }
         }
 
-        public void OnPointerEnter(PointerEventData eventData)
-        {
-            Debug.Log("<b>进入滑动页面</b>");
-        }
     }
 }

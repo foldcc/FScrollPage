@@ -24,7 +24,9 @@ namespace FScrollPage {
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            //传递事件
             scrollPage.OnPointerDown(eventData);
+            //后续逻辑
             lastPointer = eventData.position;
         }
 
